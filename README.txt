@@ -21,7 +21,7 @@ Download and enable the module. Configure the settings at admin/config/system/li
 Blocks 
 ======
 
-  libraryh3lp-queues - list queues, sorted by availability
+  libraryh3lp_queues - list queues, sorted by availability
 
 
 libraryh3lp SDK-light
