@@ -1,0 +1,148 @@
+<?php
+
+module_load_include('inc', 'libraryh3lp', 'libraryh3lp.classes');
+
+/**
+ *  Implements hook_menu.
+ */
+function libraryh3lp_menu() {
+  $items = array();
+  $items['admin/config/system/libraryh3lp'] = array(
+    'title' => t('libraryh3lp'),
+    'description' => t('Set username and password for libraryh3lp API'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('libraryh3lp_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Returns administrative settinsg form. 
+ * 
+ * WARNING: the administrative password is saved in cleartext.
+ */
+function libraryh3lp_admin_settings($form, &$form_state) {
+  $form = array();
+  $form['libraryh3lp_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('libraryh3lp username'),
+    '#default_value' => variable_get('libraryh3lp_username', NULL),
+    '#description' => t('Your libraryh3lp adminisrative account username'),
+    '#required' => FALSE,
+  );
+  $form['libraryh3lp_password'] = array(
+    '#type' => 'password',
+    '#title' => t('libraryh3lp password'),
+    '#default_value' => variable_get('libraryh3lp_password', NULL),
+    '#description' => t('Your libraryh3lp adminisrative password; Warning: passwrod is stored in clear text'),
+    '#required' => FALSE,
+  );
+  $form['libraryh3lp_base_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('libraryh3lp base URL'),
+    '#default_value' => variable_get('libraryh3lp_base_url', 'https://us.libraryh3lp.com/2011-12-03'),
+    '#description' => t('Base URL for libraryh3lp/MyCustomerCloud API'),
+    '#required' => FALSE,
+  );
+  return system_settings_form($form);
+}
+
+/** 
+ * Implements hook_block_info.
+ */
+function libraryh3lp_block_info() {
+  $blocks['libraryh3lp_queues'] = array( 
+    'info' => t('libraryh3lp: queues'),
+    'status' => FALSE,
+    'region' => 'sidebar_first',
+    'weight' => 0,
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+  );
+  return $blocks; 
+}
+
+/**
+ * Implements hook_block_configure.
+ */
+function libraryh3lp_block_configure($delta = '') {
+  switch ($delta) {
+    case 'libraryh3lp_queues':
+      $form['libraryh3lp_show_unavailable'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Show unavailable queues in block content.'),
+        '#default_value' => variable_get('libraryh3lp_show_unavailable', TRUE),
+      );
+      return $form;
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_save.
+ */
+function libraryh3lp_block_save($delta = '', $edit = array()) {
+  switch ($delta) {
+    case 'libraryh3lp_queues': 
+      variable_set('libraryh3lp_show_unavailable', $edit['libraryh3lp_show_unavailable']);
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_view.
+ */
+function libraryh3lp_block_view($delta = '') {
+  switch ($delta) {
+    case 'libraryh3lp_queues':
+      $handle = new libraryh3lp();
+      $queues = $handle->queues();
+      $data = array();
+      $block['title'] = 'libraryh3lp queues';
+      foreach ($queues as $queue) {
+        $data[$queue->show][] = theme('libraryh3lp_queue', array('queue' => $queue));
+      } 
+      if (!variable_get('libraryh3lp_show_unavailable', TRUE)) {
+        unset($data['unavailable']);
+      }
+      if (empty($data['available']) && empty($data['unavailable'])) {
+        $block['content'] = 'No queues are online.';
+      }
+      if (!empty($data['available'])) {
+        $block['content'] .= theme('item_list', array('items' => $data['available'], 
+                                                      'type' => 'ul', 'title' => 'Available' ));
+      }
+      if (!empty($data['unavailable'])) {
+        $block['content'] .= theme('item_list', array('items' => $data['unavailable'],
+                                                      'type' => 'ul', 'title' => 'Unavailable' ));
+      }
+      return $block;
+      break;
+  }
+}
+
+/**
+ * Implements hook_theme.
+ */
+function libraryh3lp_theme() {
+  return array(
+    'libraryh3lp_queue' => array(
+      'variables' => array('queue' => NULL),
+    ),
+  );
+}
+
+/**
+ *  Themes libraryh3lp queues.
+ */
+function theme_libraryh3lp_queue($vars) {
+  $queue = $vars['queue'];
+  $output = '<div class="libraryy3lp-queue">';
+  if (isset($queue->avatar) && $queue->avatar != 'null') {
+    $output .= '<img src="' . $queue->avatar . '" alt="' . $queue->name . '"/>';
+  }
+  $output .= '&nbsp;' . $queue->name;
+  $output .= '</div>';
+  return $output;
+}

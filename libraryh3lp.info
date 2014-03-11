@@ -1,0 +1,5 @@
+; Id$
+name = libraryh3lp
+description = Connects Drupal to the libraryh3lp/MyCustomerCloud API
+core = 7.x
+configure = admin/config/libraryh3lp
