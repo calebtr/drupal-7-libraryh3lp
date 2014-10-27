@@ -96,10 +96,11 @@ function libraryh3lp_block_save($delta = '', $edit = array()) {
 function libraryh3lp_block_view($delta = '') {
   switch ($delta) {
     case 'libraryh3lp_queues':
+      $block = array('title' => t('libraryh3lp queues'), 
+                     'content' => '');
       $handle = new libraryh3lp();
       $queues = $handle->queues();
       $data = array();
-      $block['title'] = 'libraryh3lp queues';
       foreach ($queues as $queue) {
         $data[$queue->show][] = theme('libraryh3lp_queue', array('queue' => $queue));
       } 
